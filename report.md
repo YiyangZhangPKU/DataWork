@@ -210,17 +210,91 @@ Countvectorizer只会对字符长度不小于2的单词进行处理，如果单�
 
 ### 实施细节
 
-#### 模型 1：xgBoost
+#### 模型 1：XGBoost
 
-* 特征提取： TF-IDF 向量器。
-* 优势： 简单、可解释。
-* 局限性： 难以捕捉词序和语义。
+1. **特征提取**：使用词袋模型将文本转换为数值向量，使XGBoost机器学习算法能够处理非结构化的文本数据。因为词袋模型实现简单，易于理解，适用于大规模文本数据处理，并且它可以将文本转换为固定长度的向量，便于XGBoost模型进行快速计算。此外，XGBoost能够很好地处理由词袋模型生成的稀疏向量，因此词袋模型与XGBoost的兼容性较强。
+```python
+# 将短语和标签提取出来
+X = train['Phrase']  # 短语
+y = train['Sentiment']  # 情感标签
+# 将数据拆分为训练集和验证集
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
+# 文本向量化
+vectorizer = CountVectorizer()
+X_train_vec = vectorizer.fit_transform(X_train)
+X_val_vec = vectorizer.transform(X_val)
+
+```
+2. **调参**：使用optuna[5]包对模型进行调参。常用的调参方式包括网格搜索（Grid Search）、贝叶斯优化（Bayesian optimization）、随机搜索（Random Search）等。网格搜索简单易行，能够系统地遍历多种参数组合，找到效果最好的参数组合，但是计算量大，特别是当超参数范围较大时，可能导致计算成本过高。贝叶斯优化基于贝叶斯统计，通过迭代方式更新超参数分布，逐步缩小最优解的范围，比网格搜索更高效，但是需要更复杂的算法和计算资源，实现起来较为复杂。综合考虑时间与计算资源和调参效果，选择使用更加高效的optuna进行调参。Optuna使用基于贝叶斯优化的TPE（Tree-structured Parzen Estimator）算法，能够更智能地选择下一组实验参数，从而加速超参数搜索过程。XGBoost需要处理大量数据和参数组合，optuna支持并行优化和剪枝策略，能够充分利用计算资源，提高搜索效率。此外，Optuna允许用户手动指定一些超参采样点，也可以添加已经计算过的采样点及其结果作为初始化样本点，进一步提高调参效率。
+
+```python
+# 定义目标函数，用于Optuna调参
+def objective(trial):
+    # 手动设置调参范围
+    params = {
+        'scale_pos_weight': trial.suggest_float('scale_pos_weight', 0.4, 0.8),
+        'learning_rate': trial.suggest_loguniform('learning_rate', 0.01, 0.1),
+        'colsample_bytree': trial.suggest_float('colsample_bytree', 0.1, 1.0),
+        'subsample': trial.suggest_float('subsample', 0.3, 0.9),
+        'n_estimators': trial.suggest_int('n_estimators', 2000, 6000),
+        'reg_alpha': trial.suggest_float('reg_alpha', 0.3, 1.0),
+        'max_depth': trial.suggest_int('max_depth', 5, 10),
+        'gamma': trial.suggest_float('gamma', 0.1, 5),
+        'random_state': 42
+    }
+    # 创建XGBClassifier
+    xgb = XGBClassifier(silent=False,**params)
+    # 训练模型
+    xgb.fit(X_train_vec, y_train)
+    # 预测验证集
+    predictions = xgb.predict(X_val_vec)
+    # 计算准确率
+    accuracy = accuracy_score(y_val, predictions)
+    # 返回准确率，Optuna将根据此值进行优化
+    return accuracy
+
+#使用optuna调参
+study = optuna.create_study(direction="maximize")
+study.optimize(objective, n_trials=20)
+
+```
+最佳结果：accuracy: 0.6495899013200052
+ Params: 
+ scale_pos_weight: 0.49532624101490497
+ learning_rate: 0.07893912053609671
+ colsample_bytree: 0.7032087285255331
+ subsample: 0.781689529704698
+ n_estimators: 3355
+ reg_alpha: 0.5267978486476341
+ max_depth: 7
+ gamma: 0.5521902572655487
+
+3. **训练模型**：使用最优参数训练模型，并评估模型性能。
+
+4. **测试集**：观察测试集输入后发现测试集数据包含缺失值NaN，影响模型后续读入数据。文本类数据常用的缺失值处理方法包括空格替代，‘<unk>’处理等。此处采用<unk>标记处理缺失值，可以保留数据中缺失值的信息，而不是简单地忽略或删除这些缺失值，有助于模型识别和学习数据中的缺失模式。同时，可以避免删除包含缺失值的数据行，保证最终提交结果符合要求。在面对文本数据时，<unk>标记可以帮助模型学习如何处理未知或未见过的词汇，从而提高模型在面对新数据时的鲁棒性。
+```python
+X_test=test['Phrase']
+#填补缺失值
+X_test.fillna('<UNK>', inplace=True)
+
+```
+5. **提交结果**：最终生成测试结果提交文件。
+```python
+X_test_vec =vectorizer.transform(X_test)
+# Prediction on test set
+xgb_predict=xgb.predict(X_test_vec)
+submission_file =pd.read_csv("E:\course\大三秋\数据科学导引\input\sampleSubmission.csv",sep=',')
+submission_file['Sentiment']=xgb_predict
+submission_file.to_csv('Submission_XGB.csv',index=False)
+
+```
+![image](https://github.com/user-attachments/assets/385572c2-41aa-4ed7-8919-f455cc303e28)
+
+**在kaggle上提交Submission_XGB.csv，XGBoost模型的预测准确率为0.61932**
 
 #### 模型 2：随机森林
 
-* 特征提取： TF-IDF 向量器。
-* 优势：处理非线性模式，减少过度拟合。
-* 局限性： 对于大型数据集而言，计算成本较高。
+
 
 #### 模型 3：LSTM
 
@@ -238,25 +312,25 @@ Countvectorizer只会对字符长度不小于2的单词进行处理，如果单�
 
 ### 模型性能
 
-| 指标    | 朴素贝叶斯 | 随机森林 | BERT | LSTM |
-| ------- | ---------- | -------- | ---- | ---- |
-| 准确率  | 70%        | 75%      | 85%  |      |
-| 精确度  | 68%        | 74%      | 87%  |      |
-| 召回率  | 69%        | 73%      | 84%  |      |
-| F1 分数 | 68%        | 74%      | 86%  |      |
+| 指标    | 朴素贝叶斯 | 随机森林 | BERT | LSTM | XGBoost |
+| ------- | ---------- | -------- | ---- | ---- | ------- |
+| 准确率  | 70%        | 75%      | 85%  |      | 62%     |
+| 精确度  | 68%        | 74%      | 87%  |      | 64%     |
+| 召回率  | 69%        | 73%      | 84%  |      | 65%     |
+| F1 分数 | 68%        | 74%      | 86%  |      | 62%     |
 
 #### 观察结果
 
 1. 朴素贝叶斯提供了一个快速、可解释的基线。
 2. 随机森林通过学习非线性关系提高了性能。
-3. 通过利用预训练嵌入和上下文理解，BERT 明显优于简单模型。
+3. XGBoost
+4. LSTM
+5. 通过利用预训练嵌入和上下文理解，BERT 明显优于简单模型。
 
 ## 六、讨论
 
-### 关键见解
-
 1. **预处理**： 高质量的文本预处理大大提高了模型的准确性。
-2. **类别不平衡**： 加权损失函数和数据扩充有效地解决了不平衡类的问题。
+2. **词的向量化方法比较**
 3. **模型比较**：
    * 较简单的模型适用于快速迭代或资源有限的环境。
    * BERT 展示了最先进的性能，但需要更多的计算资源。
@@ -292,7 +366,7 @@ Countvectorizer只会对字符长度不小于2的单词进行处理，如果单�
 | 姓名   | 学号       | 院系专业  | 分工       |
 | ------ | ---------- | --------- | ---------- |
 | 卜一凡 | 2300016653 | 生信-大三 | BERT       |
-| 韩嘉琪 | 170101103  | 生信-大三 | XGBoost    |
+| 韩嘉琪 | 2200012126  | 生信-大三 | XGBoost    |
 | 张屹阳 | 170101104  | 生科-大三 | EDA        |
 | 丁健   | 170101105  | 信管-大二 | 文本向量化 |
 | 李思润 | 170101106  | 地空-大二 | 随机森林   |
@@ -334,3 +408,4 @@ plt.rcParams.update({'font.size': 8})
 2. [2] Pang and L. Lee. 2005. Seeing stars: Exploiting class relationships for sentiment categorization with respect to rating scales. In ACL, pages 115–124.
 3. [3] Recursive Deep Models for Semantic Compositionality Over a Sentiment Treebank, Richard Socher, Alex Perelygin, Jean Wu, Jason Chuang, Chris Manning, Andrew Ng and Chris Potts. Conference on Empirical Methods in Natural Language Processing (EMNLP 2013).
 4. [【Python数据分析】文本情感分析——电影评论分析（二）文本向量化建立模型总结与改进方向 * BabyGo000 * 博客园](https://www.cnblogs.com/gc2770/p/14929162.html)
+5. [5]Akiba, T., Sano, S., Yanase, T., Ohta, T., & Koyama, M. (2019). Optuna: A Next-generation Hyperparameter Optimization Framework. In KDD (arXiv). [arXiv:1901.03862]
