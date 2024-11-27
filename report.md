@@ -4,8 +4,6 @@
 
 ### 1. 选题分析
 
-本次作业共提供了五个选题，GPT对其分析结果如下：
-
 > **1. Sentiment Analysis on Movie Reviews**
 >
 > * **难度** ：中等到较高
@@ -36,10 +34,6 @@
 > * **原因** ：这是一个无监督的聚类任务，难度在于缺少标签和真实的类别数量，需要自行探索数据结构，确定合适的簇数和算法。选择合适的评价方法（如调整兰德指数）也是一大挑战。此外，聚类的效果常受数据分布影响，需较强的探索性数据分析能力。
 > * **推荐人群** ：有兴趣探索无监督学习的同学，或希望提升数据分析和聚类技能的小组。
 
-在GPT的分析基础上，我们各自对5个选题进行了2天左右的调研分析，并在线上进行了讨论。
-
-![1732536700364](image/report/1732536700364.png)![1732536729058](image/report/1732536729058.png)
-
 我们分析了各个选题的特点、需要的技术栈和我们的能力，最后选择了文本情感分析。虽然我们小组没有自然语言处理基础，但希望提升文本数据处理技能，因此选择了这个选题。
 
 ### 2. 问题背景
@@ -54,7 +48,7 @@ Kaggle 正在为机器学习社区举办这次比赛，以用于娱乐和  练�
 
 ### 3. 问题定义
 
-任务是使用烂番茄电影评论数据集对电影评论进行情感分析。该数据集被标记为五个情感类别：
+情感分析在文本理解中起着至关重要的作用，尤其在电影评论领域，因其情感色彩丰富且具有一定的复杂性。Rotten Tomatoes电影评论数据集是情感分析任务中常用的基准数据集，其中包含五个情感分类标签：负面、稍微负面、中立、稍微正面和正面。这些标签使得该数据集成为一个具有挑战性，但也充满价值的研究对象。
 
 * **0**: 非常负面
 * **1**: 负面
@@ -88,38 +82,40 @@ Kaggle 正在为机器学习社区举办这次比赛，以用于娱乐和  练�
 3. **模型训练和调优**：
    尝试不同文本分类模型（如 LSTM、BERT 等）和参数调优，提升模型效果
    * **简单模型**：
-     1. **XGBoost**： 作为。
-     2. **随机森林**： 结合集合学习进行稳健分类。
+     1. **XGBoost**：能够处理稀疏数据，支持并行处理，具有正则化项来防止过拟合，并且能够自动学习特征组合，从而在保持高准确率的同时提高模型的泛化能力。
+     2. **随机森林**：通过构建多个决策树并进行投票或平均，能够提高分类的准确性和鲁棒性，减少过拟合的风险，并提供特征重要性评估，帮助理解模型决策过程。
    * **复杂模型**：
-     * **BERT（来自Transformer的双向编码器表征）**： 用于 NLP 任务的最先进的预训练模型。
-     * **LSTM**:
+     * **BERT（来自Transformer的双向编码器表征）**：通过预训练学习深层次的语言表示，并通过微调适应特定的分类任务，捕捉上下文信息，提高分类准确性。
+     * **LSTM**:能够有效处理序列数据中的长期依赖问题，通过记忆和遗忘机制捕捉时间序列信息，从而提高对文本中时间敏感特征的识别能力。
 4. **结果分析**：
-   用合适的评价指标评价指标（如准确率、F1 分数等）衡量模型效果，并进行可视化展示
+   用合适的评价指标评价指标（如准确率、F1 分数、召回率等）衡量模型效果，并进行可视化展示
    由于这是一个多分类任务，无法直接用AUC和ROC来直观可视化，只能间接地将其转化为多个二分类问题但不够直观，所以使用准确率、精确度、召回率、F1-分数和混淆矩阵等指标来评估。
-5. **心得与总结** ：分析实验过程中的挑战和收获。
-   1. 我们对数据集的分析和处理有所了解，对文本分类有了一定的认识。
-   2. 我们尝试了不同模型，并对模型效果进行了评估，效果理想。
-   3. 我们尝试了不同特征提取方法，效果理想。
-   4. 我们尝试了不同参数调优方法，效果理想。
 
 ## 二、数据分析处理
 
-### 数据描述和检视
-
-以下是对于数据集的描述：
+### 2.1 数据描述和检视
 
 > 该数据集由制表符分隔文件组成，其中包含来自Rotten Tomatoes数据集的短语。为了基准测试，保留了 train/test 拆分，但句子相对原始顺序，已重新排列。每个句子都已被 Stanford 解析器解析为许多短语。每个短语都有一个 PhraseId。每个句子都有一个 SentenceId。重复的短语（如短/常用词）在数据中仅包含一次。
->
-> train.tsv 包含短语及其关联的情绪标签。我们还提供了一个 SentenceId，以便您可以跟踪哪些短语属于单个句子。
->
-> test.tsv 仅包含短语。您必须为每个短语分配一个情绪标签。
->
-> 情绪标签包括：
-> 0 - negative
-> 1 - somewhat negative
-> 2 - neutral
-> 3 - somewhat positive
-> 4 - positive
+
+在本次分析中，我们使用的数据集包含总计 **156,060** 条评论。这些评论的情感分布较为不均，具体情况如下：
+
+| 情感 (Sentiment)    | 评论数 (Count) |
+| ------------------- | -------------- |
+| 0-Negative          | 7,072          |
+| 1-Somewhat negative | 27,273         |
+| 2-neutral           | 79,582         |
+| 3-somewhat positive | 32,927         |
+| 4-positive          | 9,206          |
+
+从上表可以看出，中性情感的评论数量最多，达到了 **79,582** 条，而情感negative和 positive 的评论数量相对较少，分别为 **7,072** 和 **9,206** 条。这种不均衡的情感分布可能会对模型的训练和评估产生影响。
+
+评论长度的分布情况如下：
+
+- 25% 的评论长度不超过 14 字符。
+- 50% 的评论长度（中位数）为 26 字符。
+- 75% 的评论长度不超过 53 字符。
+
+这种长度的分布表明，绝大多数评论相对较短，然而也存在少数较长的评论（最长达到 283 字符）。
 
 数据insight
 
@@ -168,13 +164,13 @@ Kaggle 正在为机器学习社区举办这次比赛，以用于娱乐和  练�
 ![vailed](image/report/vailed.png)
 根据分词逻辑，推测test分词时Sentence 9213 Phrase 171580的字面值为"None"，导致读入时误识别为了NoneType。这里将其还原为 "None" 字符串即可。（实测发现读取时指定dtype无法避免这个错误，故特殊处理）
 
-### 数据预处理和EDA
+### 2.2 探索性数据分析
 
-将评论分词。
 
-应用停止词去除和词干化/词素化。
 
-使用 TF-IDF 将文本转换为数字特征。
+
+
+### 2.3 数据预处理
 
 **删除不必要的字符（标点符号、HTML 标记）。**
 
@@ -212,7 +208,10 @@ Countvectorizer只会对字符长度不小于2的单词进行处理，如果单�
 
 #### 模型 1：XGBoost
 
-1. **特征提取**：使用词袋模型将文本转换为数值向量，使XGBoost机器学习算法能够处理非结构化的文本数据。因为词袋模型实现简单，易于理解，适用于大规模文本数据处理，并且它可以将文本转换为固定长度的向量，便于XGBoost模型进行快速计算。此外，XGBoost能够很好地处理由词袋模型生成的稀疏向量，因此词袋模型与XGBoost的兼容性较强。
+### 4.1.1 特征提取
+
+使用词袋模型将文本转换为数值向量，使XGBoost机器学习算法能够处理非结构化的文本数据。因为词袋模型实现简单，易于理解，适用于大规模文本数据处理，并且它可以将文本转换为固定长度的向量，便于XGBoost模型进行快速计算。此外，XGBoost能够很好地处理由词袋模型生成的稀疏向量，因此词袋模型与XGBoost的兼容性较强。
+
 ```python
 # 将短语和标签提取出来
 X = train['Phrase']  # 短语
@@ -225,7 +224,9 @@ X_train_vec = vectorizer.fit_transform(X_train)
 X_val_vec = vectorizer.transform(X_val)
 
 ```
-2. **调参**：使用optuna[5]包对模型进行调参。常用的调参方式包括网格搜索（Grid Search）、贝叶斯优化（Bayesian optimization）、随机搜索（Random Search）等。网格搜索简单易行，能够系统地遍历多种参数组合，找到效果最好的参数组合，但是计算量大，特别是当超参数范围较大时，可能导致计算成本过高。贝叶斯优化基于贝叶斯统计，通过迭代方式更新超参数分布，逐步缩小最优解的范围，比网格搜索更高效，但是需要更复杂的算法和计算资源，实现起来较为复杂。综合考虑时间与计算资源和调参效果，选择使用更加高效的optuna进行调参。Optuna使用基于贝叶斯优化的TPE（Tree-structured Parzen Estimator）算法，能够更智能地选择下一组实验参数，从而加速超参数搜索过程。XGBoost需要处理大量数据和参数组合，optuna支持并行优化和剪枝策略，能够充分利用计算资源，提高搜索效率。此外，Optuna允许用户手动指定一些超参采样点，也可以添加已经计算过的采样点及其结果作为初始化样本点，进一步提高调参效率。
+### 4.1.2. 调参
+
+使用optuna[5]包对模型进行调参。常用的调参方式包括网格搜索（Grid Search）、贝叶斯优化（Bayesian optimization）、随机搜索（Random Search）等。网格搜索简单易行，能够系统地遍历多种参数组合，找到效果最好的参数组合，但是计算量大，特别是当超参数范围较大时，可能导致计算成本过高。贝叶斯优化基于贝叶斯统计，通过迭代方式更新超参数分布，逐步缩小最优解的范围，比网格搜索更高效，但是需要更复杂的算法和计算资源，实现起来较为复杂。综合考虑时间与计算资源和调参效果，选择使用更加高效的optuna进行调参。Optuna使用基于贝叶斯优化的TPE（Tree-structured Parzen Estimator）算法，能够更智能地选择下一组实验参数，从而加速超参数搜索过程。XGBoost需要处理大量数据和参数组合，optuna支持并行优化和剪枝策略，能够充分利用计算资源，提高搜索效率。此外，Optuna允许用户手动指定一些超参采样点，也可以添加已经计算过的采样点及其结果作为初始化样本点，进一步提高调参效率。
 
 ```python
 # 定义目标函数，用于Optuna调参
@@ -269,16 +270,23 @@ study.optimize(objective, n_trials=20)
  max_depth: 7
  gamma: 0.5521902572655487
 
-3. **训练模型**：使用最优参数训练模型，并评估模型性能。
+### 4.1.3 训练模型
 
-4. **测试集**：观察测试集输入后发现测试集数据包含缺失值NaN，影响模型后续读入数据。文本类数据常用的缺失值处理方法包括空格替代，‘<unk>’处理等。此处采用<unk>标记处理缺失值，可以保留数据中缺失值的信息，而不是简单地忽略或删除这些缺失值，有助于模型识别和学习数据中的缺失模式。同时，可以避免删除包含缺失值的数据行，保证最终提交结果符合要求。在面对文本数据时，<unk>标记可以帮助模型学习如何处理未知或未见过的词汇，从而提高模型在面对新数据时的鲁棒性。
+使用最优参数训练模型，并评估模型性能。
+
+### 4.1.4 测试集
+观察测试集输入后发现测试集数据包含缺失值NaN，影响模型后续读入数据。文本类数据常用的缺失值处理方法包括空格替代，‘<unk>’处理等。此处采用<unk>标记处理缺失值，可以保留数据中缺失值的信息，而不是简单地忽略或删除这些缺失值，有助于模型识别和学习数据中的缺失模式。同时，可以避免删除包含缺失值的数据行，保证最终提交结果符合要求。在面对文本数据时，<unk>标记可以帮助模型学习如何处理未知或未见过的词汇，从而提高模型在面对新数据时的鲁棒性。
+
 ```python
 X_test=test['Phrase']
 #填补缺失值
 X_test.fillna('<UNK>', inplace=True)
 
 ```
-5. **提交结果**：最终生成测试结果提交文件。
+### 4.1.5 提交结果
+
+生成测试结果并提交文件
+
 ```python
 X_test_vec =vectorizer.transform(X_test)
 # Prediction on test set
@@ -293,23 +301,130 @@ submission_file.to_csv('Submission_XGB.csv',index=False)
 **在kaggle上提交Submission_XGB.csv，XGBoost模型的预测准确率为0.61932**
 
 ![output](https://github.com/user-attachments/assets/03628a24-192c-42ca-a10d-d40cf7ee4894)
+
 由混淆矩阵，模型对第2类文本预测效果较好，准确率约为67%，但是对第0类和第4类预测效果较差，准确率分别约为56%和60%。训练数据中性情感的评论数量最多，达到了79,582条，而第0类和第4类（情感negative和positive）的评论数量相对较少，分别为7,072和9,206条。这种不均衡的情感分布使XGBoost的训练评估受到影响，导致XGBoost对于数据量较少的第0、4类数据的预测准确率下降。
 
 #### 模型 2：随机森林
 
-
+### 4.2.1
+### 4.2.2
 
 #### 模型 3：LSTM
 
-* 特征提取： TF-IDF 向量器。
-* 优势：。
-* 局限性： 对于大型数据集而言，计算成本较高。
+### 4.3.1
+### 4.3.2
 
-#### 模型 3：BERT
+#### 模型 4：BERT
 
-* 特征提取： 使用预训练嵌入。
-* 优点 捕捉词与词之间的上下文关系。
-* 局限性： 需要大量计算资源。
+本研究旨在应用Google提供的BERT（Bidirectional Encoder Representations from Transformers）模型，特别是“bert-base-uncased”版本，来进行该数据集的情感分类。BERT模型通过双向预训练的深度学习结构，能够从上下文中同时捕获语句的前后信息，与传统的单向语言模型相比，具有显著的优势。
+
+### 4.4.1 BERT-Case(Uncased)模型
+
+我们使用BERT模型进行情感分类，首先加载BERT分词器并对训练数据进行编码：
+
+```python
+from transformers import AutoTokenizer
+tokenizer = AutoTokenizer.from_pretrained("./bert-base-uncased")
+# 分词并编码
+encoded_inputs = tokenizer(
+    train["Phrase"].tolist(),
+    padding=True,
+    truncation=True,
+    max_length=128,
+    return_tensors="pt"
+)
+```
+
+### 4.2 模型加载
+
+接下来，我们加载BERT模型并查看其结构：
+
+```python
+from transformers import AutoModelForSequenceClassification
+model = AutoModelForSequenceClassification.from_pretrained(
+    local_model_path,
+    num_labels=5,
+    output_hidden_states=True
+)
+```
+
+### 主要组成部分
+
+1. **BertModel**：12层，每层有 12 个注意力头，负责处理输入的文本数据。
+2. **嵌入层（Embeddings）**：
+   - **词嵌入（word_embeddings）**：将词汇表中的每个单词映射到一个768维的向量。
+   - **位置嵌入（position_embeddings）**：为每个单词提供位置信息，帮助模型理解单词在句子中的顺序。
+   - **句子类型嵌入（token_type_embeddings）**：用于区分不同类型的输入
+3. **编码器（Encoder）**：
+   - 包含多个 BERT 层，每层都有自注意力机制和前馈神经网络。
+   - **自注意力机制（Self-Attention）**：允许模型在处理每个单词时关注输入序列中的其他单词。
+   - **层归一化（LayerNorm）**：在每层的输出上应用归一化，以提高训练稳定性。
+4. **分类器（Classifier）**：
+   - 最后一层是一个线性层，将 BERT 的输出转换为特定类别的 logits（未归一化的概率分布），在这里输出的类别数为 5。
+
+- **Dropout**：在多个层中使用 Dropout（丢弃法）来防止过拟合。
+
+### 4.3 训练参数设置
+
+设置训练参数，包括批大小、学习率和训练轮数：
+
+```python
+from transformers import TrainingArguments
+batch_size = 64
+metric_name = 'f1'
+args = TrainingArguments(
+    output_dir="./results",
+    eval_strategy="epoch",
+    save_strategy="epoch",
+    learning_rate=1e-5,
+    per_device_train_batch_size=batch_size,
+    per_device_eval_batch_size=batch_size,
+    num_train_epochs=50,
+    weight_decay=0.1,
+    load_best_model_at_end=True,
+    metric_for_best_model=metric_name,
+    logging_dir='./logs',
+    logging_steps=10,
+    eval_steps=500,
+    warmup_steps=500,
+    fp16=True,
+)
+```
+
+前两次训练过程中，training loss一直下降，但是valiadation loss一直上升，模型发生了明显的过拟合。
+
+![image-20241127002332991](C:\Users\lenovo\AppData\Roaming\Typora\typora-user-images\image-20241127002332991.png)
+
+因此，为了防止模型过拟合，将学习率调整为1e-5，同时增大批大小为64，增加L2正则化系数到0.1，同时增加drop_out参数为0.3，模型过拟合情况得到缓解。
+
+### 4.4 训练与评估
+
+为了防止模型过拟合，配置早停回调并设置Trainer进行训练：
+
+```python
+from transformers import Trainer, EarlyStoppingCallback
+early_stopping = EarlyStoppingCallback(early_stopping_patience=2)
+trainer = Trainer(
+    model=model,
+    args=args,
+    train_dataset=train_dataset,
+    eval_dataset=val_dataset,
+    tokenizer=tokenizer,
+    compute_metrics=compute_metrics,
+    callbacks=[early_stopping]
+)
+```
+
+## 4.5 结果与分析
+
+最优的预测得分为66.582%，接近最高得分70%左右
+
+![](C:\Users\lenovo\AppData\Roaming\Typora\typora-user-images\image-20241127001908119.png)
+
+根据混淆矩阵看到，模型对于2和4的预测效果较好均达到了70%及以上，但是在0,1和3的预测效果只有50%左右。
+
+![image-20241126230522835](C:\Users\lenovo\AppData\Roaming\Typora\typora-user-images\image-20241126230522835.png)
+
 
 ## 五、实验结果分析
 
@@ -317,10 +432,10 @@ submission_file.to_csv('Submission_XGB.csv',index=False)
 
 | 指标    | 朴素贝叶斯 | 随机森林 | BERT | LSTM | XGBoost |
 | ------- | ---------- | -------- | ---- | ---- | ------- |
-| 准确率  | 70%        | 75%      | 85%  |      | 62%     |
-| 精确度  | 68%        | 74%      | 87%  |      | 64%     |
-| 召回率  | 69%        | 73%      | 84%  |      | 65%     |
-| F1 分数 | 68%        | 74%      | 86%  |      | 62%     |
+| 准确率  | 70%        | 75%      | 66.6%  |      | 61.9%     |
+| 精确度  | 68%        | 74%      |   |      | 64%     |
+| 召回率  | 69%        | 73%      |   |      | 65%     |
+| F1 分数 | 68%        | 74%      |   |      | 62%     |
 
 #### 观察结果
 
