@@ -73,7 +73,7 @@ Kaggle 正在为机器学习社区举办这次比赛，以用于娱乐和  练�
 1. **数据预处理和EDA**：
    分析数据集的特征和结构，处理缺失值、异常值。对数据初步分析，探索有无规律
    1. 删除不必要的字符（标点符号、HTML 标记）。
-   2. 将评论分词，应用停止词去除和词干化/词素化。
+   2. 将评论分词，应用停止词去除和词干化\词素化。
    3. 探索性数据分析，包括数据分布、类别分布、句长分布等。
 2. **词向量表示**：
    根据任务性质、数据集特征和模型来选择合适的向量化方法
@@ -95,7 +95,7 @@ Kaggle 正在为机器学习社区举办这次比赛，以用于娱乐和  练�
 
 ### 2.1 数据描述和检视
 
-> 该数据集由制表符分隔文件组成，其中包含来自Rotten Tomatoes数据集的短语。为了基准测试，保留了 train/test 拆分，但句子相对原始顺序，已重新排列。每个句子都已被 Stanford 解析器解析为许多短语。每个短语都有一个 PhraseId。每个句子都有一个 SentenceId。重复的短语（如短/常用词）在数据中仅包含一次。
+> 该数据集由制表符分隔文件组成，其中包含来自Rotten Tomatoes数据集的短语。为了基准测试，保留了 train\test 拆分，但句子相对原始顺序，已重新排列。每个句子都已被 Stanford 解析器解析为许多短语。每个短语都有一个 PhraseId。每个句子都有一个 SentenceId。重复的短语（如短\常用词）在数据中仅包含一次。
 
 在本次分析中，我们使用的数据集包含总计 **156,060** 条评论。这些评论的情感分布较为不均，具体情况如下：
 
@@ -135,7 +135,7 @@ Kaggle 正在为机器学习社区举办这次比赛，以用于娱乐和  练�
 > memory usage: 3.0+ MB
 > None
 >
-> ![train_data_info](image/report/train_data_info.png)
+> ![train_data_info](.\image\train_data_info.png)
 
 ---
 
@@ -154,7 +154,7 @@ Kaggle 正在为机器学习社区举办这次比赛，以用于娱乐和  练�
 > memory usage: 1.0+ MB
 > None
 >
-> ![test_data_info](image/report/test_data_info.png)
+> ![test_data_info](.\image\test_data_info.png)
 
 ### 2.2 数据预处理
 
@@ -163,7 +163,7 @@ Kaggle 正在为机器学习社区举办这次比赛，以用于娱乐和  练�
 这里可看到测试集读入时有一个空缺值，后面在文本向量化和建模的时候会导致报错。
 `ValueError: np.nan is an invalid document, expected byte or unicode string.`
 一开始想用众数填充或其他填充方法，但想到原论文分词的逻辑并不会出现空词，于是特意看了下数据。
-![vailed](image/report/vailed.png)
+![vailed](.\image\vailed.png)
 根据分词逻辑，推测test_data分词时Sentence 9213, Phrase 171580的字面值为"None"，导致读入时误识别为了NoneType。这里将其还原为 "None" 字符串即可。（实测发现读取时指定dtype无法避免这个错误，故特殊处理）
 
 **删除不必要的字符（标点符号、HTML 标记）。**
@@ -176,19 +176,19 @@ Kaggle 正在为机器学习社区举办这次比赛，以用于娱乐和  练�
 
 在简单的预处理后，我们在这一步做了文本数据一个初步统计分析。我们对于情感类型的分布做了统计，结果显示Neutral占了一半以上，而最确定的Negative和Positive占比最少。这也非常符合本组数据将一个句子做树状拆分后，大部分短语的情感色彩为Neutral的特点。
 
-![类别统计](.\image\report\类别统计.svg)
+![类别统计](.\image\类别统计.svg)
 
 然后我们分析了总体句长的分布。本组数据的句长分布呈现典型的偏态分布特征。结合数据的来源，可以推测其相对符合指数分布。
 
-![句长分布](.\image\report\句长分布.svg)
+![句长分布](.\image\句长分布.svg)
 
 然后我们对于不同情感色彩的句长进行了分析，探讨其差异性。可以看到Neutral组的句长分布明显偏短，而注释有情感的短句长度会更高一些。但是所有组别的分布仍然都是短句远多于长句。这一方面说明了大部分短句可能都没有明显的感情色彩，另一方面也说明了长句的感情色彩仍然需要由决定性的短语来确定。
 
-![情感句长分布](.\image\report\情感句长分布.svg)
+![情感句长分布](.\image\情感句长分布.svg)
 
 随后我们利用 `nltk`进行了一个初步的词频分析.选取了每组词频前20位的词语，并在常规禁用词外增加了我们前期看到的一些在本任务中比较常见但没有很大价值的词汇。可以看到特别高频出现的词汇依旧没有太大的感情色彩，在各组之间均有分布。但是次高频出现的词汇就能体现出比较明显的感情色彩。这提示这些次高频词汇可能是分析文本感情的关键。
 
-![词频分析](.\image\report\词频分析.svg)
+![词频分析](.\image\词频分析.svg)
 
 ## 三、文本向量化
 
@@ -318,13 +318,14 @@ xgb_predict=xgb.predict(X_test_vec)
 submission_file =pd.read_csv("E:\course\大三秋\数据科学导引\input\sampleSubmission.csv",sep=',')
 submission_file['Sentiment']=xgb_predict
 submission_file.to_csv('Submission_XGB.csv',index=False)
-
 ```
-![image](https://github.com/user-attachments/assets/385572c2-41aa-4ed7-8919-f455cc303e28)
+
+<img width="1028" alt="2550fc86584931a7ba115cd29a1da0b" src="https:\\github.com\user-attachments\assets\385572c2-41aa-4ed7-8919-f455cc303e28">
 
 **在kaggle上提交Submission_XGB.csv，XGBoost模型的预测准确率为0.61932**
 
-![output](https://github.com/user-attachments/assets/03628a24-192c-42ca-a10d-d40cf7ee4894)
+<img width="400" alt="output" src="https:\\github.com\user-attachments\assets\03628a24-192c-42ca-a10d-d40cf7ee4894">
+<!-- ![output](.\image\output.png) -->
 
 由混淆矩阵，模型对第2类文本预测效果较好，准确率约为67%，但是对第0类和第4类预测效果较差，准确率分别约为56%和60%。训练数据中性情感的评论数量最多，达到了79,582条，而第0类和第4类（情感negative和positive）的评论数量相对较少，分别为7,072和9,206条。这种不均衡的情感分布使XGBoost的训练评估受到影响，导致XGBoost对于数据量较少的第0、4类数据的预测准确率下降。
 
@@ -337,27 +338,88 @@ submission_file.to_csv('Submission_XGB.csv',index=False)
 LSTM即长短期记忆网络，是一种时间递归神经网络，适合于处理和预测时间序列中间隔和延迟相对较长的重要事件。
 
 #### 4.3.1 数据准备
-加载数据：训练和测试数据集是使用 Pandas 从 TSV 文件加载的。训练数据包含短语及其相应的情绪标签。
+加载数据：训练和测试数据集是使用 Pandas 从 TSV 文件加载的。训练数据包含短语及其相应的情绪标签。  
 TF-IDF 向量化：使用术语频率-逆文档频率 （TF-IDF） 方法将文本短语转换为数字特征向量，这有助于捕获单词在整个语料库中的重要性。
+```python
+import torch.nn as nn
+import torch.nn.functional as F
+# 检查是否可以使用GPU
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device}")
+
+# 将TF-IDF数据转换为PyTorch张量
+X_train_tensor = torch.tensor(X_train_vec2, dtype=torch.float32).to(device)
+X_test_tensor = torch.tensor(X_val_vec2, dtype=torch.float32).to(device)
+```
+在这一步，我们基于DataFrame自定义了一个数据类，方便实现训练集和测试集的加载，统一了操作符。
+
+```python
+# 创建自定义数据集类
+class PhraseDataset(Dataset):
+    def __init__(self, features, labels=None):
+        self.features = features  # 特征数据
+        self.labels = labels  # 标签数据
+        
+    def __len__(self):
+        return len(self.features)  # 返回数据集的长度
+    
+    def __getitem__(self, idx):
+        if self.labels is not None:
+            return self.features[idx], self.labels[idx]  # 返回特征和标签
+        else:
+            return self.features[idx]  # 只返回特征
+
+# 准备数据集
+train_labels = train['Sentiment'].values  # 获取训练集标签
+train_dataset = PhraseDataset(X_train_tensor, train_labels)  # 创建训练数据集
+```
 
 #### 4.3.2 模型架构
-1.**Model Definition**：该类定义神经网络架构。该模型包括：SentimentLSTM 
-  一个具有 12 层且隐藏大小为 256 的 LSTM 层，旨在捕获输入序列中的时间依赖关系。最终层数降至4层
-	一个完全连接的层，用于将 LSTM 输出映射到情绪类。
-	一个 dropout 层，通过在训练期间将一小部分输入单位随机设置为零来防止过拟合。训练过程中由0.2调制0.3
+1.**Model Definition**：该类定义神经网络架构。该模型包括：SentimentLSTM  
+   一个具有 12 层且隐藏大小为 256 的 LSTM 层，旨在捕获输入序列中的时间依赖关系。最终层数降至4层  
+	一个完全连接的层，用于将 LSTM 输出映射到情绪类。  
+	一个 dropout 层，通过在训练期间将一小部分输入单位随机设置为零来防止过拟合。训练过程中由0.2调至0.3
+
 2.**Forward Pass**：将 Importing 重塑为包含序列维度，使其能够由 LSTM 处理。然后，最后一个 LSTM 单元的输出通过全连接层以生成情绪预测。
 
+```python
+# 定义情感分类模型
+class SentimentNN(nn.Module):
+    def __init__(self, input_dim, output_size):
+        super().__init__()
+        self.fc1 = nn.Linear(input_dim, 64)  # 第一个全连接层
+        self.fc2 = nn.Linear(64, 32)  # 第二个全连接层
+        self.fc3 = nn.Linear(32, output_size)  # 输出层
+        self.dropout = nn.Dropout(0.5)  # Dropout层，防止过拟合
+
+    def forward(self, x):
+        x = F.relu(self.fc1(x))  # 应用ReLU激活函数
+        x = self.dropout(x)  # 应用Dropout
+        x = F.relu(self.fc2(x))  # 应用ReLU激活函数
+        x = self.dropout(x)  # 应用Dropout
+        x = self.fc3(x)  # 输出层
+        return x
+
+# 设置训练参数
+input_dim = X_train.shape[1]  # 输入维度
+output_size = 5  # 输出类别数
+net = SentimentNN(input_dim, output_size).to(device)  # 创建模型并移动到指定设备
+net.train()  # 设置模型为训练模式
+```
+
 #### 4.3.3 训练模型
-超参数：该模型设置为以 0.00001 的学习率训练最多 500 个 epoch。采用 Adam 优化器和交叉熵损失来指导训练。
-Early Stopping：为了防止过度拟合，实施了 Early Stop 机制。如果验证准确率连续 10 个 epoch 没有提高，则训练将停止。
+超参数：该模型设置为以 0.00001 的学习率训练最多 500 个 epoch。采用 Adam 优化器和交叉熵损失来指导训练。  
+
+Early Stopping：为了防止过度拟合，实施了 Early Stop 机制。如果验证准确率连续 10 个 epoch 没有提高，则训练将停止。  
+
 训练循环：对于每个 epoch，模型在小批量数据上进行训练，累积损失和准确率指标。训练后，模型在验证集上评估其性能。
 
 #### 4.3.4 测试
-训练后，将在测试数据集上评估模型。为每个短语生成预测，并将结果编译到 DataFrame 中。
-最后，预测将保存到 CSV 文件中，以供进一步分析或提交。
+训练后，将在测试数据集上评估模型。为每个短语生成预测，并将结果编译到 DataFrame 中。最后，预测将保存到 CSV 文件中，以供进一步分析或提交。
 
-<img width="1028" alt="2550fc86584931a7ba115cd29a1da0b" src="https://github.com/user-attachments/assets/34ce7bf0-0240-4ac7-a344-016b94873d65">
+<img width="1028" alt="2550fc86584931a7ba115cd29a1da0b" src="https:\\github.com\user-attachments\assets\34ce7bf0-0240-4ac7-a344-016b94873d65">
 
+最终kaggle上提交的结果为：0.62105
 
 ### 模型 4：BERT
 
@@ -369,7 +431,7 @@ Early Stopping：为了防止过度拟合，实施了 Early Stop 机制。如果
 
 ```python
 from transformers import AutoTokenizer
-tokenizer = AutoTokenizer.from_pretrained("./bert-base-uncased")
+tokenizer = AutoTokenizer.from_pretrained(".\bert-base-uncased")
 # 分词并编码
 encoded_inputs = tokenizer(
     train["Phrase"].tolist(),
@@ -418,7 +480,7 @@ from transformers import TrainingArguments
 batch_size = 64
 metric_name = 'f1'
 args = TrainingArguments(
-    output_dir="./results",
+    output_dir=".\results",
     eval_strategy="epoch",
     save_strategy="epoch",
     learning_rate=1e-5,
@@ -428,7 +490,7 @@ args = TrainingArguments(
     weight_decay=0.1,
     load_best_model_at_end=True,
     metric_for_best_model=metric_name,
-    logging_dir='./logs',
+    logging_dir='.\logs',
     logging_steps=10,
     eval_steps=500,
     warmup_steps=500,
@@ -438,7 +500,7 @@ args = TrainingArguments(
 
 前两次训练过程中，training loss一直下降，但是valiadation loss一直上升，模型发生了明显的过拟合。
 
-![image-20241127002332991](C:\Users\lenovo\AppData\Roaming\Typora\typora-user-images\image-20241127002332991.png)
+![过拟合](.\image\过拟合.png)
 
 因此，为了防止模型过拟合，将学习率调整为1e-5，同时增大批大小为64，增加L2正则化系数到0.1，同时增加drop_out参数为0.3，模型过拟合情况得到缓解。
 
@@ -464,11 +526,11 @@ trainer = Trainer(
 
 最优的预测得分为66.582%，接近最高得分70%左右
 
-![](C:\Users\lenovo\AppData\Roaming\Typora\typora-user-images\image-20241127001908119.png)
+![bert_result](.\image\bert_result.png)
 
 根据混淆矩阵看到，模型对于2和4的预测效果较好均达到了70%及以上，但是在0,1和3的预测效果只有50%左右。
 
-![image-20241126230522835](C:\Users\lenovo\AppData\Roaming\Typora\typora-user-images\image-20241126230522835.png)
+![bert_confusion](.\image\bert_confusion.png)
 
 
 ## 五、实验结果分析
@@ -476,18 +538,18 @@ trainer = Trainer(
 ### 5.1 模型性能
 
 | 指标    | 朴素贝叶斯 | 随机森林 | BERT | LSTM | XGBoost |
-| ------- | ---------- | -------- | ---- | ---- | ------- |
-| 准确率  | 70%        | 75%      | 66.6%  |  62.1%    | 61.9%     |
-| 精确度  | 68%        | 74%      |   |      | 64%     |
-| 召回率  | 69%        | 73%      |   |      | 65%     |
-| F1 分数 | 68%        | 74%      |   |      | 62%     |
-
+| ------- | --------- | ------- | ---- | ----- | ------ |
+| 准确率  | 61%        | 75%    | 66.6% | 62.1% | 61.9%  |
+| 精确度  | 60%        | 74%    |       |       | 64%    |
+| 召回率  | 61%        | 73%    |  65%  |       | 65%    |
+| F1 分数 | 60%        | 74%    |  66%  |       | 62%    |
+  
 ### 5.2 综合评估
 
 1. 朴素贝叶斯 提供了一个快速、可解释的基线。
 2. 随机森林 通过学习非线性关系提高了性能。
-3. XGBoost
-4. LSTM
+3. XGBoost 
+4. LSTM 
 5. BERT 通过利用预训练嵌入和上下文理解，准确率明显优于简单模型。
 
 ## 六、讨论
@@ -496,6 +558,16 @@ trainer = Trainer(
 高质量的文本预处理大大提高了模型的准确性。
 
 ### 6.2 词的向量化方法比较
+
+在这应用这三种方法后，我们使用一些未优化的简单模型对数据进行了建模分类，并使用准确率评估模型的性能，藉此衡量向量化方法的优劣。得到的结果如下：
+
+| 向量化方法 | 模型 | 准确率 | Kaggle得分 |
+| --------- | ---- | ----- | ---------- |
+| Bag-of-Words | MultinomialNB | 0.62 | 0.59 |
+| TF-IDF | MultinomialNB | 0.62 | 0.59 |
+| Word2Vec | Logistic Regression | 0.51 | 0.48 |
+
+我们发现词袋模型和TF-IDF向量化方法在准确率上有着相似的效果，Kaggle得分差异也不大。Word2Vec作为更复杂的模型在验证集准确率上却表现不佳，可能是因为Word2Vec模型需要大量的训练数据才能得到较好的效果，也可能是我们没有对其参数进行优化。
 
 ### 6.3 模型比较
    * 较简单的模型适用于快速迭代或资源有限的环境。
@@ -531,21 +603,22 @@ trainer = Trainer(
 
 ### 实验环境设置
 
-* **硬件**： intel™（NVIDIA®）RTX 4050 图形处理器，6GB 显存，16GB 内存。
-* **软件**：python 3.11 jupyter botebook, win11
-* **库依赖版本**：numpy==2.0.0  
-pandas==1.3.5  
-matplotlib==3.5.1  
-seaborn==0.11.2  
-nltk==3.7  
-scikit-learn==1.0.2  
-pytorch==1.10.2  
-tensorflow==2.8.0  
-transformers==4.17.0  
-optuna==2.10.0  
-xgboost==1.5.1  
-
-
+* **硬件**：大部分代码在本地运行，普通的高性能笔记本配置都可以满足实验需求，但部分代码需要在 GPU 上运行，因此需要准备 GPU 环境。XGBoost和BERT模型在实验室服务器上运行。
+* **软件**：python >=3.11, jupyter botebook
+* **库依赖版本**：  
+numpy==2.0.0
+pandas==2.2.2
+matplotlib==3.8.0
+seaborn==0.13.2
+nltk==3.9.1
+spacy==3.8.2
+scikit-learn==1.4.2
+gensim==4.3.3
+tensorflow==2.15.0
+transformers==4.46.3
+xgboost==1.5.1
+optuna==4.1.0
+torch==2.5.1
 
 ### 完整代码
 
@@ -553,8 +626,8 @@ xgboost==1.5.1
 
 ## 参考文献
 
-1. Will Cukierski. Sentiment Analysis on Movie Reviews. [https://kaggle.com/competitions/sentiment-analysis-on-movie-reviews](https://kaggle.com/competitions/sentiment-analysis-on-movie-reviews), 2014. Kaggle.
+1. Will Cukierski. Sentiment Analysis on Movie Reviews. <https:\\kaggle.com\competitions\sentiment-analysis-on-movie-reviews>, 2014. Kaggle.
 2. [2] Pang and L. Lee. 2005. Seeing stars: Exploiting class relationships for sentiment categorization with respect to rating scales. In ACL, pages 115–124.
 3. [3] Recursive Deep Models for Semantic Compositionality Over a Sentiment Treebank, Richard Socher, Alex Perelygin, Jean Wu, Jason Chuang, Chris Manning, Andrew Ng and Chris Potts. Conference on Empirical Methods in Natural Language Processing (EMNLP 2013).
-4. [【Python数据分析】文本情感分析——电影评论分析（二）文本向量化建立模型总结与改进方向 * BabyGo000 * 博客园](https://www.cnblogs.com/gc2770/p/14929162.html)
+4. [4] BabyGo000. 【Python数据分析】文本情感分析——电影评论分析（二）文本向量化建立模型总结与改进方向. <https:\\www.cnblogs.com\gc2770\p\14929162.html>, 2021, 博客园
 5. [5]Akiba, T., Sano, S., Yanase, T., Ohta, T., & Koyama, M. (2019). Optuna: A Next-generation Hyperparameter Optimization Framework. In KDD (arXiv). [arXiv:1901.03862]
