@@ -346,7 +346,7 @@ model = AutoModelForSequenceClassification.from_pretrained(
 )
 ```
 
-### 主要组成部分
+#### 主要组成部分
 
 1. **BertModel**：12层，每层有 12 个注意力头，负责处理输入的文本数据。
 2. **嵌入层（Embeddings）**：
