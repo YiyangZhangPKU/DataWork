@@ -292,6 +292,9 @@ submission_file.to_csv('Submission_XGB.csv',index=False)
 
 **在kaggle上提交Submission_XGB.csv，XGBoost模型的预测准确率为0.61932**
 
+![output](https://github.com/user-attachments/assets/03628a24-192c-42ca-a10d-d40cf7ee4894)
+由混淆矩阵，模型对第2类文本预测效果较好，准确率约为67%，但是对第0类和第4类预测效果较差，准确率分别约为56%和60%。训练数据中性情感的评论数量最多，达到了79,582条，而第0类和第4类（情感negative和positive）的评论数量相对较少，分别为7,072和9,206条。这种不均衡的情感分布使XGBoost的训练评估受到影响，导致XGBoost对于数据量较少的第0、4类数据的预测准确率下降。
+
 #### 模型 2：随机森林
 
 
