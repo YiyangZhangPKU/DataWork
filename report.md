@@ -156,61 +156,25 @@ Kaggle 正在为机器学习社区举办这次比赛，以用于娱乐和  练�
 >
 > ![test_data_info](image/report/test_data_info.png)
 
-为了处理的简便起见，我们在这一部分导入数据时在原始的tsv文件中把列名删除了，重新指定了列名并指定了每一列的数据类型，防止出现以外的类型转换问题。由之前的一些测试代码可以发现本数据的质量较好，没有缺失数据等，故不需要做这一步预处理。
+### 2.2 数据预处理
 
-这里可看到测试集有一个空缺值，后面在文本向量化和建模的时候会导致报错。
+为了处理的简便起见，我们在这一部分导入数据时在原始的tsv文件中把列名删除了，重新指定了列名并指定了每一列的数据类型，防止出现以外的类型转换问题。由之前的一些测试代码可以发现本数据的质量较好，没有缺失数据等问题，故不需要做太多预处理。
+
+这里可看到测试集读入时有一个空缺值，后面在文本向量化和建模的时候会导致报错。
 `ValueError: np.nan is an invalid document, expected byte or unicode string.`
 一开始想用众数填充或其他填充方法，但想到原论文分词的逻辑并不会出现空词，于是特意看了下数据。
 ![vailed](image/report/vailed.png)
-根据分词逻辑，推测test分词时Sentence 9213 Phrase 171580的字面值为"None"，导致读入时误识别为了NoneType。这里将其还原为 "None" 字符串即可。（实测发现读取时指定dtype无法避免这个错误，故特殊处理）
-
-### 2.2 探索性数据分析
-
-```python
-train_data["phrase"] = train_data["phrase"].apply(lambda x: x.lower())
-train_data["phrase"] = train_data["phrase"].apply(lambda x:re.sub('[%s]' % re.escape(string.punctuation), '', x))
-
-train_data_copy=train_data.copy(deep=True)
-
-plt.pie(train_data_copy['sentiment'].value_counts().sort_index(),
-        labels=['Negative','Somewhat negative','Neutral','Somewhat positive','Positive'],
-        autopct='%1.1f%%',
-        startangle=80
-        )
-plt.title('Proportion of Sentiments')
-plt.show()
-
-
-```
-![image](https://github.com/user-attachments/assets/08f138ca-07c3-410d-bacd-78b630cd410d)
-
-我们在这一步做了文本数据的预处理和一个初步统计。为了消除常见的干扰信息，我们去除了文本中的标点符号并将所有字母转为小写字母。我们对于情感类型的分布做了统计，结果显示Neutral占了一半以上，而最确定的Negative和Positive占比最少。这也非常符合本组数据将一个句子做树状拆分后，大部分短语的情感色彩为Neutral的特点。
-
-```python
-train_data_copy['lens'] = train_data_copy['phrase'].apply(lambda x: len(x.split()))
-train_data_copy['sentiment'] = train_data_copy['sentiment'].apply(lambda x: str(x).replace('0','Negative').replace('1','Somewhat negative').replace('2','Neutral').replace('3','Somewhat positive').replace('4','Positive'))
-plt.hist(train_data_copy['lens'],bins=40)
-plt.title('Histogram of Phrase Lengths Distribution')
-
-```
-
-![image](https://github.com/user-attachments/assets/aef94e53-ea12-4b40-9534-e62121d1f5a5)
-
-然后我们分析了总体句长的分布。本组数据的句长分布呈现典型的偏态分布特征。结合数据的来源，可以推测其相对符合指数分布。
-
-![image](https://github.com/user-attachments/assets/965c8496-47a3-4553-a510-85bd8bd4d547)
-
-然后我们对于不同情感色彩的句长进行了分析，探讨其差异性。可以看到Neutral组的句长分布明显偏短，而注释有情感的短句长度会更高一些。但是所有组别的分布仍然都是短句远多于长句。这一方面说明了大部分短句可能都没有明显的感情色彩，另一方面也说明了长句的感情色彩仍然需要由决定性的短语来确定。
-
-![image](https://github.com/user-attachments/assets/72e3b995-9a7b-418d-8871-308000a2c6d8)
-
-随后我们利用nltk进行了一个初步的词频分析.选取了每组词频前20位的词语，并在常规禁用词外增加了我们前期看到的一些在本任务中比较常见但没有很大价值的词汇。可以看到特别高频出现的词汇依旧没有太大的感情色彩，在各组之间均有分布。但是次高频出现的词汇就能体现出比较明显的感情色彩。这提示这些次高频词汇可能是分析文本感情的关键。
-
-### 2.3 数据预处理
+根据分词逻辑，推测test_data分词时Sentence 9213, Phrase 171580的字面值为"None"，导致读入时误识别为了NoneType。这里将其还原为 "None" 字符串即可。（实测发现读取时指定dtype无法避免这个错误，故特殊处理）
 
 **删除不必要的字符（标点符号、HTML 标记）。**
 
-我们在这一步做了文本数据的预处理和一个初步统计。为了消除常见的干扰信息，我们去除了文本中的标点符号并将所有字母转为小写字母。我们对于情感类型的分布做了统计，结果显示Neutral占了一半以上，而最确定的Negative和Positive占比最少。这也非常符合本组数据将一个句子做树状拆分后，大部分短语的情感色彩为Neutral的特点。
+根据分词逻辑，推测test分词时Sentence 9213 Phrase 171580的字面值为"None"，导致读入时误识别为了NoneType。这里将其还原为 "None" 字符串即可。（实测发现读取时指定dtype无法避免这个错误，故特殊处理）
+
+为了消除常见的干扰信息，我们去除了文本中的标点符号并将所有字母转为小写字母。
+
+### 2.3 探索性数据分析
+
+在简单的预处理后，我们在这一步做了文本数据一个初步统计分析。我们对于情感类型的分布做了统计，结果显示Neutral占了一半以上，而最确定的Negative和Positive占比最少。这也非常符合本组数据将一个句子做树状拆分后，大部分短语的情感色彩为Neutral的特点。
 
 ![类别统计](.\image\report\类别统计.svg)
 
@@ -228,15 +192,41 @@ plt.title('Histogram of Phrase Lengths Distribution')
 
 ## 三、文本向量化
 
+```python
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.metrics import classification_report,f1_score, roc_auc_score, accuracy_score,confusion_matrix
+
+# 将短语和标签提取出来
+X = train_data['Phrase']  # 短语
+y = train_data['Sentiment']  # 情感标签
+
+# 将数据拆分为训练集和验证集
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
+```
+
 ### 3.1 词袋模型
 
 将文本转换为词频向量，每个词一个维度，词频作为值。
 
-Countvectorizer只会对字符长度不小于2的单词进行处理，如果单词就一个字符，这个单词就会被忽略。 注意 ，经过训练后，CountVectorizer就可以对测试集文件进行向量化了，但是向量化出来的特征只是训练集出现的单词特征，如果测试集出现了训练集中没有的单词，就无法在词袋模型中体现了。
+```python
+# 文本向量化
+vectorizer = CountVectorizer()
+X_train_vec = vectorizer.fit_transform(X_train)
+X_val_vec = vectorizer.transform(X_val)
+```
+
+`Countvectorizer`只会对字符长度不小于2的单词进行处理，如果单词就一个字符，这个单词就会被忽略。  
+注意 ，经过训练后，`CountVectorizer`就可以对测试集文件进行向量化了，但是向量化出来的特征只是训练集出现的单词特征，如果测试集出现了训练集中没有的单词，就无法在词袋模型中体现了。
 
 ### 3.2 TF-IDF
 
-词频-逆文档频率（TF-IDF）权重，权重越高，代表该词在该文档中越重要。scikit-learn库中的tf-idf转换与标准公式稍微不同，而且tf-idf结果会用L1或L2范数进行标准化。
+词频-逆文档频率（TF-IDF）权重，权重越高，代表该词在该文档中越重要。  `scikit-learn`库中的tf-idf转换与标准公式稍微不同，会使用$L_1$或$L_2$范数进行归一化（默认为$L_2$范数）。
+
+### 3.3 Word2Vec
+
+Word2Vec 是一种深度学习模型，用于将单词转换为固定长度的向量表示。这种方法保留了词与词之间的语义关系，能够捕捉词汇中的潜在含义。
 
 ## 四、模型训练和调优
 
@@ -532,42 +522,34 @@ trainer = Trainer(
 
 | 姓名   | 学号       | 院系专业  | 分工       |
 | ------ | ---------- | --------- | ---------- |
-| 卜一凡 | 2300016653 | 生信-大三 | BERT       |
+| 卜一凡 |  | 生信-大三 | BERT       |
 | 韩嘉琪 | 2200012126 | 生信-大三 | XGBoost    |
-| 张屹阳 |            | 生科-大三 | EDA        |
-| 丁健   |            | 信管-大二 | 文本向量化 |
-| 李思润 | 170101106  | 地空-大二 | 随机森林   |
-| 耿子喻 | 170101107  | 信科-大一 | LSTM       |
+| 张屹阳 |            | 生科-大三 | EDA、报告        |
+| 丁健   | 2300016653 | 信管-大二 | 文本向量化、报告草稿 |
+| 李思润 |   | 地空-大二 | 随机森林   |
+| 耿子喻 |   | 信科-大一 | LSTM       |
 
 ### 实验环境设置
 
 * **硬件**： intel™（NVIDIA®）RTX 4050 图形处理器，6GB 显存，16GB 内存。
 * **软件**：python 3.11 jupyter botebook, win11
-* **库依赖版本**：numpy 2.0.0 pandas matplotlib
-
-### 代码
-
-```python
-import numpy as np
-import pandas as pd
-import re
-import string
-import spacy
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-import seaborn as sns
-import nltk
-from nltk import FreqDist
-from nltk.corpus import stopwords
-from nltk import word_tokenize
-mpl.rcParams['font.sans-serif'] = ['SimHei']
-mpl.rcParams['axes.unicode_minus'] = False
-plt.rcParams.update({'font.size': 8})
-%matplotlib inline
-%config InlineBackend.figure_format = 'svg'
+* **库依赖版本**：numpy==2.0.0  
+pandas==1.3.5  
+matplotlib==3.5.1  
+seaborn==0.11.2  
+nltk==3.7  
+scikit-learn==1.0.2  
+pytorch==1.10.2  
+tensorflow==2.8.0  
+transformers==4.17.0  
+optuna==2.10.0  
+xgboost==1.5.1  
 
 
-```
+
+### 完整代码
+
+详见“final_report.ipynb”文件。
 
 ## 参考文献
 
