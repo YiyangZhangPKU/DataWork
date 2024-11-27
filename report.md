@@ -166,9 +166,45 @@ Kaggle 正在为机器学习社区举办这次比赛，以用于娱乐和  练�
 
 ### 2.2 探索性数据分析
 
+```python
+train_data["phrase"] = train_data["phrase"].apply(lambda x: x.lower())
+train_data["phrase"] = train_data["phrase"].apply(lambda x:re.sub('[%s]' % re.escape(string.punctuation), '', x))
+
+train_data_copy=train_data.copy(deep=True)
+
+plt.pie(train_data_copy['sentiment'].value_counts().sort_index(),
+        labels=['Negative','Somewhat negative','Neutral','Somewhat positive','Positive'],
+        autopct='%1.1f%%',
+        startangle=80
+        )
+plt.title('Proportion of Sentiments')
+plt.show()
 
 
+```
+![image](https://github.com/user-attachments/assets/08f138ca-07c3-410d-bacd-78b630cd410d)
 
+我们在这一步做了文本数据的预处理和一个初步统计。为了消除常见的干扰信息，我们去除了文本中的标点符号并将所有字母转为小写字母。我们对于情感类型的分布做了统计，结果显示Neutral占了一半以上，而最确定的Negative和Positive占比最少。这也非常符合本组数据将一个句子做树状拆分后，大部分短语的情感色彩为Neutral的特点。
+
+```python
+train_data_copy['lens'] = train_data_copy['phrase'].apply(lambda x: len(x.split()))
+train_data_copy['sentiment'] = train_data_copy['sentiment'].apply(lambda x: str(x).replace('0','Negative').replace('1','Somewhat negative').replace('2','Neutral').replace('3','Somewhat positive').replace('4','Positive'))
+plt.hist(train_data_copy['lens'],bins=40)
+plt.title('Histogram of Phrase Lengths Distribution')
+
+```
+
+![image](https://github.com/user-attachments/assets/aef94e53-ea12-4b40-9534-e62121d1f5a5)
+
+然后我们分析了总体句长的分布。本组数据的句长分布呈现典型的偏态分布特征。结合数据的来源，可以推测其相对符合指数分布。
+
+![image](https://github.com/user-attachments/assets/965c8496-47a3-4553-a510-85bd8bd4d547)
+
+然后我们对于不同情感色彩的句长进行了分析，探讨其差异性。可以看到Neutral组的句长分布明显偏短，而注释有情感的短句长度会更高一些。但是所有组别的分布仍然都是短句远多于长句。这一方面说明了大部分短句可能都没有明显的感情色彩，另一方面也说明了长句的感情色彩仍然需要由决定性的短语来确定。
+
+![image](https://github.com/user-attachments/assets/72e3b995-9a7b-418d-8871-308000a2c6d8)
+
+随后我们利用nltk进行了一个初步的词频分析.选取了每组词频前20位的词语，并在常规禁用词外增加了我们前期看到的一些在本任务中比较常见但没有很大价值的词汇。可以看到特别高频出现的词汇依旧没有太大的感情色彩，在各组之间均有分布。但是次高频出现的词汇就能体现出比较明显的感情色彩。这提示这些次高频词汇可能是分析文本感情的关键。
 
 ### 2.3 数据预处理
 
@@ -308,9 +344,30 @@ submission_file.to_csv('Submission_XGB.csv',index=False)
 #### 4.2.2
 
 ### 模型 3：LSTM
+LSTM即长短期记忆网络，是一种时间递归神经网络，适合于处理和预测时间序列中间隔和延迟相对较长的重要事件。
 
-#### 4.3.1
-#### 4.3.2
+#### 4.3.1 数据准备
+加载数据：训练和测试数据集是使用 Pandas 从 TSV 文件加载的。训练数据包含短语及其相应的情绪标签。
+TF-IDF 向量化：使用术语频率-逆文档频率 （TF-IDF） 方法将文本短语转换为数字特征向量，这有助于捕获单词在整个语料库中的重要性。
+
+#### 4.3.2 模型架构
+1.**Model Definition**：该类定义神经网络架构。该模型包括：SentimentLSTM 
+  一个具有 12 层且隐藏大小为 256 的 LSTM 层，旨在捕获输入序列中的时间依赖关系。最终层数降至4层
+	一个完全连接的层，用于将 LSTM 输出映射到情绪类。
+	一个 dropout 层，通过在训练期间将一小部分输入单位随机设置为零来防止过拟合。训练过程中由0.2调制0.3
+2.**Forward Pass**：将 Importing 重塑为包含序列维度，使其能够由 LSTM 处理。然后，最后一个 LSTM 单元的输出通过全连接层以生成情绪预测。
+
+#### 4.3.3 训练模型
+超参数：该模型设置为以 0.00001 的学习率训练最多 500 个 epoch。采用 Adam 优化器和交叉熵损失来指导训练。
+Early Stopping：为了防止过度拟合，实施了 Early Stop 机制。如果验证准确率连续 10 个 epoch 没有提高，则训练将停止。
+训练循环：对于每个 epoch，模型在小批量数据上进行训练，累积损失和准确率指标。训练后，模型在验证集上评估其性能。
+
+#### 4.3.4 测试
+训练后，将在测试数据集上评估模型。为每个短语生成预测，并将结果编译到 DataFrame 中。
+最后，预测将保存到 CSV 文件中，以供进一步分析或提交。
+
+<img width="1028" alt="2550fc86584931a7ba115cd29a1da0b" src="https://github.com/user-attachments/assets/34ce7bf0-0240-4ac7-a344-016b94873d65">
+
 
 ### 模型 4：BERT
 
@@ -430,7 +487,7 @@ trainer = Trainer(
 
 | 指标    | 朴素贝叶斯 | 随机森林 | BERT | LSTM | XGBoost |
 | ------- | ---------- | -------- | ---- | ---- | ------- |
-| 准确率  | 70%        | 75%      | 66.6%  |      | 61.9%     |
+| 准确率  | 70%        | 75%      | 66.6%  |  62.1%    | 61.9%     |
 | 精确度  | 68%        | 74%      |   |      | 64%     |
 | 召回率  | 69%        | 73%      |   |      | 65%     |
 | F1 分数 | 68%        | 74%      |   |      | 62%     |
