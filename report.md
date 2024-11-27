@@ -332,13 +332,12 @@ submission_file.to_csv('Submission_XGB.csv',index=False)
 由混淆矩阵，模型对第2类文本预测效果较好，准确率约为67%，但是对第0类和第4类预测效果较差，准确率分别约为56%和60%。训练数据中性情感的评论数量最多，达到了79,582条，而第0类和第4类（情感negative和positive）的评论数量相对较少，分别为7,072和9,206条。这种不均衡的情感分布使XGBoost的训练评估受到影响，导致XGBoost对于数据量较少的第0、4类数据的预测准确率下降。
 
 ### 模型 2：随机森林
-### 四、模型训练和调优
 
-#### 模型 2：随机森林
+### 模型 2：随机森林
 
 随机森林是一种基于决策树的集成学习算法，通过构建多个决策树并结合它们的预测结果来提高整体模型的性能。这种方法在处理高维数据时表现出色，尤其是在特征空间很大时，能够保持较高的准确性和鲁棒性。
 
-#### 4.2.1 特征提取
+### 4.2.1 特征提取
 
 在特征提取阶段，我们采用了TF-IDF向量化方法。TF-IDF能够将文本数据转换为数值型特征，考虑词频（Term Frequency）和逆文档频率（Inverse Document Frequency），减少常见词汇的影响，突出关键词的重要性。通过支持bigram（双词组合），我们能够捕捉更多上下文信息，尤其对情感分类至关重要。
 
@@ -350,7 +349,7 @@ def extract_features(train_texts, test_texts, max_features=10000):
     return X_train_tfidf, X_test_tfidf, tfidf
 ```
 
-#### 4.2.2 超参数优化
+### 4.2.2 超参数优化
 
 为了找到最佳的模型参数，我们采用了网格搜索（GridSearchCV）。我们调整了n_estimators（树的数量）、max_depth（树的最大深度）、min_samples_split（分裂内部节点所需的最小样本数）和min_samples_leaf（叶节点所需的最小样本数）。通过交叉验证和准确率评分，我们找到了最佳的参数组合，有助于提高模型的性能和泛化能力。
 
@@ -373,9 +372,10 @@ def optimize_hyperparameters(X_train, y_train):
     print("最佳参数组合:", grid_search.best_params_)
     return grid_search.best_estimator_
 ```
-#### 4.2.3 模型训练和评估
+### 4.2.3 模型训练和评估
 
-使用优化后的超参数，我们训练了随机森林模型，并在验证集上进行了评估。我们计算了准确率、精确度、召回率和F1分数，并使用混淆矩阵进行了可视化。这些指标帮助我们评估模型的性能，揭示了模型在不同类别上的表现差异。
+使用优化后的超参数，我们训练了随机森林模型，并在验证集上进行了评估。我们计算了准确率、精确度、召回率和F1分数，并使用混淆矩阵进行了可视化。这些指标帮助我们评估模型的性能，揭示了模型在不同类别上的表现差异。  
+<img width="400" alt="output" src="./image/Figure_1.png">
 
 ```py3
 def train_and_evaluate(X_train, y_train, X_val, y_val, model):
@@ -395,9 +395,11 @@ def train_and_evaluate(X_train, y_train, X_val, y_val, model):
     print(f"训练和验证总耗时: {time.time() - start_time:.2f} 秒")
     return model
 ```
-#### 4.2.4 特征重要性可视化
 
-随机森林模型提供了特征重要性评估，我们可视化了最重要的特征，以便更好地理解模型的决策过程。通过分析特征的重要性，我们可以识别对情感分类影响最大的词汇和表达。
+### 4.2.4 特征重要性可视化
+
+随机森林模型提供了特征重要性评估，我们可视化了最重要的特征，以便更好地理解模型的决策过程。通过分析特征的重要性，我们可以识别对情感分类影响最大的词汇和表达。  
+<img width="400" alt="output" src="./image/Figure_2.png">
 
 ```py3
 def plot_feature_importance(model, tfidf, top_n=20):
@@ -412,16 +414,20 @@ def plot_feature_importance(model, tfidf, top_n=20):
     plt.title('Top Important Features')
     plt.show()
 ```
-#### 4.2.5 实验结果
+### 4.2.5 实验结果
+
+![指标](.\image\rf_指标.png)
 
 在实验中，随机森林模型表现出了较好的性能：准确率为75%，精确度为74%，召回率为73%，F1分数为74%。这些结果表明，随机森林模型能够有效地处理文本数据，在情感分类任务中表现良好。通过混淆矩阵，我们发现模型在中性情感类别（类别2）上的预测效果最好，而在负面和正面情感类别上的预测效果相对较差，可能与数据集中情感类别的不平衡有关。
 
-#### 4.2.6 模型解释性
+### 4.2.6 模型解释性
 
 随机森林模型具有较强的可解释性。通过分析特征重要性，我们能够理解模型的预测过程。本研究中发现，“great”、“excellent”、“poor”和“bad”等关键词显著影响模型的预测结果，这与我们的预期一致，因为这些词汇通常与正面或负面情感相关联。
 
 ### 模型 3：LSTM
-LSTM即长短期记忆网络，是一种时间递归神经网络，适合于处理和预测时间序列中间隔和延迟相对较长的重要事件。
+LSTM即长短期记忆网络，是一种时间递归神经网络。Lstm是rnn的一种，克服了传统的rnn梯度消失和梯度爆炸的问题，适合于处理和预测时间序列中间隔和延迟相对较长的重要事件，适用于此次的语言情感处理。  
+但是lstm参数多，效率低且易过拟合，我们遇到的最大的困难就是过拟合，例如训练集训练到了准确率86%，而测试集只有60%。最终通过设置早停和降低学习率至0.00001，提高隐藏层层数至三层等方法使准确率到达62.1%。  
+![过拟合](.\image\lstm过拟合.png)
 
 #### 4.3.1 数据准备
 加载数据：训练和测试数据集是使用 Pandas 从 TSV 文件加载的。训练数据包含短语及其相应的情绪标签。  
@@ -625,12 +631,10 @@ trainer = Trainer(
 
 | 指标    | 朴素贝叶斯 | 随机森林 | BERT | LSTM | XGBoost |
 | ------- | --------- | ------- | ---- | ----- | ------ |
-| 准确率  | 61%        | 75%    | 66.6% | 62.1% | 61.9%  |
+| 准确率  | 61%        | 63%    | 66.6% | 62.1% | 61.9%  |
 | 精确度  | 60%        | 74%    |       |       | 64%    |
 | 召回率  | 61%        | 73%    |  65%  |       | 65%    |
 | F1 分数 | 60%        | 74%    |  66%  |       | 62%    |
-  
-### 5.2 综合评估
 
 1. 朴素贝叶斯 提供了一个快速、可解释的基线。
 2. 随机森林 通过学习非线性关系提高了性能。
@@ -641,7 +645,7 @@ trainer = Trainer(
 ## 六、讨论
 
 ### 6.1 预处理
-高质量的文本预处理大大提高了模型的准确性。
+高质量的文本预处理可以提高了模型的准确性。
 
 ### 6.2 词的向量化方法比较
 
@@ -657,12 +661,15 @@ trainer = Trainer(
 
 ### 6.3 模型比较
    * 较简单的模型适用于快速迭代或资源有限的环境。
-   * BERT 展示了最先进的性能，但需要更多的计算资源。
+   * BERT 展示了最先进的性能，但需要更多的计算资源，且微调困难耗时。
 
 ### 难点
 
-微调 BERT 的计算成本。
-处理文本中的边缘情况，如讽刺和模棱两可的表达。
+* 微调 BERT 的计算成本。
+* 处理文本中的边缘情况，如讽刺和模棱两可的表达。
+* 模型需要大量的训练数据才能达到预期的性能。
+* 各种模型都表现出一定程度的过拟合，具体为在验证集上得分可能很高，但在测试集上得分很低。
+
 
 ### 未来的工作
 
@@ -671,8 +678,9 @@ trainer = Trainer(
 
 ## 七、结论
 
-* 朴素贝叶斯和随机森林对建立基线非常有效。
-* BERT 是性能最好的模型，非常适合需要高准确性的生产场景。
+* 朴素贝叶斯和随机森林对建立基线非常有效。较简单的模型适用于快速迭代或资源有限的环境。在快速原型或低资源设置中使用更简单的模型。
+* BERT 是性能最好的模型，非常适合需要高准确性的生产场景。在计算资源不受限制的应用中部署 BERT。
+* 情感分析是一个复杂的任务，需要考虑许多因素，如文本长度、情感强度等。
 
 ## 附录
 
@@ -680,12 +688,12 @@ trainer = Trainer(
 
 | 姓名   | 学号       | 院系专业  | 分工       |
 | ------ | ---------- | --------- | ---------- |
-| 卜一凡 |  | 生信-大三 | BERT       |
-| 韩嘉琪 | 2200012126 | 生信-大三 | XGBoost    |
-| 张屹阳 |            | 生科-大三 | EDA、报告        |
-| 丁健   | 2300016653 | 信管-大二 | 文本向量化、报告草稿 |
-| 李思润 |   | 地空-大二 | 随机森林   |
-| 耿子喻 |   | 信科-大一 | LSTM       |
+| 卜一凡 | 2200012137 | 生信-大三 | BERT及报告    |
+| 韩嘉琪 | 2200012126 | 生信-大三 | XGBoost及报告 |
+| 张屹阳 |            | 生科-大三 | EDA、报告梳理  |
+| 丁健   | 2300016653 | 信管-大二 | 文本向量化、报告草稿|
+| 李思润 | 2300012651 | 地空-大二 | 随机森林及报告   |
+| 耿子喻 | 2400013212 | 信科-大一 | LSTM及报告    |
 
 ### 实验环境设置
 
@@ -712,8 +720,8 @@ torch==2.5.1
 
 ## 参考文献
 
-1. Will Cukierski. Sentiment Analysis on Movie Reviews. <https:\\kaggle.com\competitions\sentiment-analysis-on-movie-reviews>, 2014. Kaggle.
+1. [1] Will Cukierski. Sentiment Analysis on Movie Reviews. <https:\\kaggle.com\competitions\sentiment-analysis-on-movie-reviews>, 2014. Kaggle.
 2. [2] Pang and L. Lee. 2005. Seeing stars: Exploiting class relationships for sentiment categorization with respect to rating scales. In ACL, pages 115–124.
 3. [3] Recursive Deep Models for Semantic Compositionality Over a Sentiment Treebank, Richard Socher, Alex Perelygin, Jean Wu, Jason Chuang, Chris Manning, Andrew Ng and Chris Potts. Conference on Empirical Methods in Natural Language Processing (EMNLP 2013).
 4. [4] BabyGo000. 【Python数据分析】文本情感分析——电影评论分析（二）文本向量化建立模型总结与改进方向. <https:\\www.cnblogs.com\gc2770\p\14929162.html>, 2021, 博客园
-5. [5]Akiba, T., Sano, S., Yanase, T., Ohta, T., & Koyama, M. (2019). Optuna: A Next-generation Hyperparameter Optimization Framework. In KDD (arXiv). [arXiv:1901.03862]
+5. [5] Akiba, T., Sano, S., Yanase, T., Ohta, T., & Koyama, M. (2019). Optuna: A Next-generation Hyperparameter Optimization Framework. In KDD (arXiv). [arXiv:1901.03862]
