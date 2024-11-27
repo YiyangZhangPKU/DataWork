@@ -331,8 +331,92 @@ submission_file.to_csv('Submission_XGB.csv',index=False)
 
 ### 模型 2：随机森林
 
-#### 4.2.1
-#### 4.2.2
+随机森林是一种基于决策树的集成学习算法，通过构建多个决策树并结合它们的预测结果来提高整体模型的性能。这种方法在处理高维数据时表现出色，尤其是在特征空间很大时，能够保持较高的准确性和鲁棒性。
+
+#### 4.2.1 特征提取
+
+在特征提取阶段，我们采用了TF-IDF向量化方法。TF-IDF能够将文本数据转换为数值型特征，考虑词频（Term Frequency）和逆文档频率（Inverse Document Frequency），减少常见词汇的影响，突出关键词的重要性。通过支持bigram（双词组合），我们能够捕捉更多上下文信息，尤其对情感分类至关重要。
+
+```python
+def extract_features(train_texts, test_texts, max_features=10000):
+    tfidf = TfidfVectorizer(ngram_range=(1, 2), max_features=max_features)
+    X_train_tfidf = tfidf.fit_transform(train_texts)
+    X_test_tfidf = tfidf.transform(test_texts)
+    return X_train_tfidf, X_test_tfidf, tfidf
+```
+    
+#### 4.2.2 超参数优化
+
+为了找到最佳的模型参数，我们采用了网格搜索（GridSearchCV）。我们调整了n_estimators（树的数量）、max_depth（树的最大深度）、min_samples_split（分裂内部节点所需的最小样本数）和min_samples_leaf（叶节点所需的最小样本数）。通过交叉验证和准确率评分，我们找到了最佳的参数组合，有助于提高模型的性能和泛化能力。
+
+```python
+def optimize_hyperparameters(X_train, y_train):
+    param_grid = {
+        'n_estimators': [100, 200, 300],
+        'max_depth': [10, 20, None],
+        'min_samples_split': [2, 5, 10],
+        'min_samples_leaf': [1, 2, 4]
+    }
+    grid_search = GridSearchCV(
+        RandomForestClassifier(random_state=42, n_jobs=-1),
+        param_grid,
+        cv=3,
+        scoring='accuracy',
+        verbose=2
+    )
+    grid_search.fit(X_train, y_train)
+    print("最佳参数组合:", grid_search.best_params_)
+    return grid_search.best_estimator_
+
+```
+
+#### 4.2.3 模型训练和评估
+
+使用优化后的超参数，我们训练了随机森林模型，并在验证集上进行了评估。我们计算了准确率、精确度、召回率和F1分数，并使用混淆矩阵进行了可视化。这些指标帮助我们评估模型的性能，揭示了模型在不同类别上的表现差异。
+
+def train_and_evaluate(X_train, y_train, X_val, y_val, model):
+    start_time = time.time()
+    
+    model.fit(X_train, y_train)
+    y_val_pred = model.predict(X_val)
+    
+    print("验证集准确率:", accuracy_score(y_val, y_val_pred))
+    print("分类报告:\n", classification_report(y_val, y_val_pred))
+    
+    cm = confusion_matrix(y_val, y_val_pred)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+    disp.plot()
+    plt.show()
+    
+    print(f"训练和验证总耗时: {time.time() - start_time:.2f} 秒")
+    return model
+
+#### 4.2.4 特征重要性可视化
+
+随机森林模型提供了特征重要性评估，我们可视化了最重要的特征，以便更好地理解模型的决策过程。通过分析特征的重要性，我们可以识别对情感分类影响最大的词汇和表达。
+
+```python
+def plot_feature_importance(model, tfidf, top_n=20):
+    feature_importances = model.feature_importances_
+    feature_names = tfidf.get_feature_names_out()
+    indices = np.argsort(feature_importances)[-top_n:]
+    
+    plt.figure(figsize=(10, 8))
+    plt.barh(range(len(indices)), feature_importances[indices], align='center')
+    plt.yticks(range(len(indices)), [feature_names[i] for i in indices])
+    plt.xlabel('Feature Importance')
+    plt.title('Top Important Features')
+    plt.show()
+
+```
+
+#### 4.2.5 实验结果
+
+在实验中，随机森林模型表现出了较好的性能：准确率为75%，精确度为74%，召回率为73%，F1分数为74%。这些结果表明，随机森林模型能够有效地处理文本数据，在情感分类任务中表现良好。通过混淆矩阵，我们发现模型在中性情感类别（类别2）上的预测效果最好，而在负面和正面情感类别上的预测效果相对较差，可能与数据集中情感类别的不平衡有关。
+
+#### 4.2.6 模型解释性
+
+随机森林模型具有较强的可解释性。通过分析特征重要性，我们能够理解模型的预测过程。本研究中发现，“great”、“excellent”、“poor”和“bad”等关键词显著影响模型的预测结果，这与我们的预期一致，因为这些词汇通常与正面或负面情感相关联。
 
 ### 模型 3：LSTM
 LSTM即长短期记忆网络，是一种时间递归神经网络，适合于处理和预测时间序列中间隔和延迟相对较长的重要事件。
